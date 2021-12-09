@@ -2,6 +2,8 @@
 - name: "Start Appian Services"
   hosts: all
   gather_facts: true
+  vars:
+    appian_home: "/opt/app/appian_21.2.435.0"
   tasks:
   - name: "Start Search Server"
     shell:
