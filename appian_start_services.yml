@@ -1,0 +1,15 @@
+---
+- name: "Start Appian Services"
+  hosts: all
+  gather_facts: true
+  tasks:
+  - name: "Start Search Server"
+    shell:
+      cmd: "{{ appian_home }}/search-server/bin/start.sh"
+    args:
+      chdir: "{{ appian_home }}/search-server/bin/"
+      creates: "{{ appian_home }}/search-server/bin/ss.pid"
+    environment:
+      JAVA_HOME: "{{ appian_home }}/java"
+    become: yes
+    become_user: appian
