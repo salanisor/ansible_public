@@ -10,7 +10,7 @@
           dest: /etc/systemd/system/appian-svc.service
       - name: "Enable Appian service"
         systemd:
-          name: appian-service.service
+          name: appian-svc.service
           state: started
           enabled: yes
           daemon_reload: yes
