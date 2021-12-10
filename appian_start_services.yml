@@ -7,7 +7,7 @@
   tasks:
   - name: "Start Search Server"
     shell:
-      cmd: "{{ appian_home }}/search-server/bin/start.sh >/dev/null 2>&1 &"
+      cmd: "{{ appian_home }}/search-server/bin/start.sh &"
     args:
       chdir: "{{ appian_home }}/search-server/bin/"
       creates: "{{ appian_home }}/search-server/bin/ss.pid"
