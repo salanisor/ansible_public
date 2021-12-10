@@ -6,8 +6,8 @@
     block:
       - name: "Place Appian systemd file"
         copy:
-          src: appian-service.service
-          dest: /etc/systemd/system/appian-service.service
+          src: appian-svc.service
+          dest: /etc/systemd/system/appian-svc.service
       - name: "Enable Appian service"
         systemd:
           name: appian-service.service

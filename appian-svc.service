@@ -9,6 +9,7 @@ User=appian
 Group=appian 
 Restart=on-failure
 RestartSec=30
+Environment=JAVA_HOME=/opt/app/appian_21.2.435.0/java
 ExecStart=/opt/app/appian_21.2.435.0/search-server/bin/start.sh
 ExecStop=/opt/app/appian_21.2.435.0/search-server/bin/stop.sh
 PIDFile=/opt/app/appian_21.2.435.0/search-server/bin/ss.pid
