@@ -1,0 +1,14 @@
+---
+- hosts: all
+  gather_facts: false
+  tasks:
+  - name: "Place Appian systemd file"
+    copy:
+      src: appian-service.service
+      dest: /etc/systemd/system/appian-service.service
+  - name: "Enable Appian service"
+    systemd:
+    name: appian-service.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
