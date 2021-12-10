@@ -2,7 +2,7 @@
 - hosts: all
   gather_facts: false
   tasks:
-  block: "Deploy Appian"
+  block:
     - name: "Place Appian systemd file"
       copy:
         src: appian-service.service
