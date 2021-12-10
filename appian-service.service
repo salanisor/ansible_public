@@ -1,0 +1,17 @@
+[Unit]
+Description=Appian Service
+Documentation=https://wiki.flightsimulator.com/appian
+After=network.target syslog.target
+
+[Service]
+Type=forking
+User=appian
+Group=appian 
+Restart=on-failure
+RestartSec=30
+ExecStart=/opt/app/appian_21.2.435.0/search-server/bin/start.sh
+ExecStop=/opt/app/appian_21.2.435.0/search-server/bin/stop.sh
+PIDFile=/opt/app/appian_21.2.435.0/search-server/bin/ss.pid
+
+[Install]
+WantedBy=multi-user.target
