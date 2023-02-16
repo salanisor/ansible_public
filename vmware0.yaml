@@ -1,0 +1,52 @@
+---
+- name: Enumerate VMs and Write to File
+  hosts: all
+  collections:
+    - community.vmware
+  gather_facts: true
+  vars:
+    vcenteruser: ""
+    url: ""
+    vcenterpassword: ""
+    clustername: local
+    input_file: "v1_vmlist_"
+    output_file: "v1_vmlist_"
+  tasks:
+    - name: Gather info about all ESXi Host in given Cluster
+      community.vmware.vmware_host_config_info:
+          hostname: "{{url}}"
+          username: "{{vcenteruser}}"
+          password: "{{vcenterpassword}}"
+          cluster_name: "{{clustername}}"
+          validate_certs: no
+      delegate_to: localhost
+      register: hostfacts
+      
+    - name: Create a hostList
+      set_fact:
+        HostList: "{{ HostList | default([]) | unique + [ hostfacts['hosts_info'].keys() | list | first ]}}"
+
+    - name: Enumerate VMs
+      community.vmware.vmware_vm_info: 
+        hostname: "{{url}}"
+        username: "{{vcenteruser}}"
+        password: "{{vcenterpassword}}"
+        validate_certs: no
+      register: vm_facts
+      delegate_to: localhost
+      tags: veem
+
+    - name: Write VM names to file
+      lineinfile:
+        create: true
+        path: "{{ output_file + item.esxi_hostname }}.txt"
+        line: "{{ item.guest_name }}:{{ item.esxi_hostname }}"
+      loop: "{{ vm_facts.virtual_machines }}"
+      delegate_to: localhost
+      tags: veem
+        
+    #- name: Include host tasks foreach host in cluster
+    #  include: vh_FWUpdateHostTasks.yml esxi_hostname="{{ item }}" input_file="{{ input_file }}" file_host="{{ file_host }}"
+    #  vars:
+    #    esxi_hostname: "{{ item }}"
+    #  with_items: "{{ HostList }}"
