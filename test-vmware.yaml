@@ -1,0 +1,50 @@
+---
+- name: Enumerate VMs and Write to File
+  hosts: all
+  serial: 1
+  collections:
+    - community.vmware
+  gather_facts: true
+  vars:
+    vcenteruser: ""
+    url: ""
+    vcenterpassword: ""
+    clustername: local
+    input_file: "v1_vmlist_"
+    output_file: "v1_vmlist_"
+  tasks:
+  - name: Gather info about all ESXi Host in given Cluster
+    community.vmware.vmware_host_config_info:
+        hostname: "{{url}}"
+        username: "{{vcenteruser}}"
+        password: "{{vcenterpassword}}"
+        cluster_name: "{{clustername}}"
+        validate_certs: no
+    register: hostfacts
+    
+  - name: Create a hostList
+    set_fact:
+      HostList: "{{ HostList | default([]) | unique + [ hostfacts['hosts_info'].keys() | list | first ]}}"
+
+  - name: Enumerate VMs
+    community.vmware.vmware_vm_info: 
+      hostname: "{{url}}"
+      username: "{{vcenteruser}}"
+      password: "{{vcenterpassword}}"
+      validate_certs: no
+    register: vm_facts
+
+  - name: Create VMs & Hosts List
+    set_fact:
+      vms_hosts: "{{ vm_facts | json_query(query) }}"
+    vars:
+      query: '(virtual_machines[*].{guest: guest_name, host: esxi_hostname})'
+
+  - name: Write VMs & Hosts List to file
+    lineinfile:
+      create: true
+      state: present
+      path: "{{ output_file + item.host }}.txt"
+      line: "{{ item.guest }}:{{ item.host }}"
+    with_items:
+    - "{{ vms_hosts }}"
