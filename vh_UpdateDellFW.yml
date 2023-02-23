@@ -68,8 +68,8 @@
         esxi_hostname: "{{ item.host }}"
         evacuate: true
         state: present
-    with_items:
-    - "{{ vms_hosts }}"
+      with_items:
+      - "{{ vms_hosts }}"
 
     - name: Reboot vmhost
       community.vmware.vmware_host_powerstate:
@@ -81,8 +81,8 @@
         state: reboot-host
       delegate_to: localhost
       register: reboot_host
-    with_items:
-    - "{{ vms_hosts }}"
+      with_items:
+      - "{{ vms_hosts }}"
 
     - name: STOP Maintenance Mode
       community.vmware.vmware_maintenancemode:
@@ -93,13 +93,13 @@
         esxi_hostname: "{{ item.host }}"
         state: absent
       delegate_to: localhost
-    with_items:
-    - "{{ vms_hosts }}"
+      with_items:
+      - "{{ vms_hosts }}"
 
     - name: Perform a vMotion of virtual machine
       community.vmware.vmware_vmotion:
         vm_name: "{{ item.guest }}"
         destination_host: "{{ item.host }}"
-    with_items:
-    - "{{ vms_hosts }}"
-      delegate_to: localhost
+      with_items:
+      - "{{ vms_hosts }}"
+        delegate_to: localhost
