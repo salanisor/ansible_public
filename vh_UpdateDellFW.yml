@@ -1,0 +1,105 @@
+---
+- name: Enumerate VMs and Write to File
+  hosts: all
+  serial: 1
+  collections:
+    - community.vmware
+  gather_facts: true
+  vars:
+    vcenteruser: "{{ lookup('env','vcenteruser') }}"
+    vcenterpassword: "{{ lookup('env','vcenterpassword') }}"
+    workspace: "{{ lookup('env','WORKSPACE') }}"
+    task_name: 'vh_UpdateDellFW'
+    pipeline_name: 'VmwareDellFWUpdate-Dev'
+    log_header: "GHNSDEVOPS_PIPELINE|CICD-"
+    input_file: "v1_vmlist_"
+    output_file: "v1_vmlist_"
+    #clustername: "BCUSWAHP001" ### var now provided thru input file so that ops team can only update one file to initiate pipeline run
+    file_host: packer
+  vars_files:
+    - "{{ workspace }}/Vars/user_input_VmwareDellFWUpdate.yml"
+   
+  tasks:
+  - name: Gather info about all ESXi Host in given Cluster
+    community.vmware.vmware_host_config_info:
+        hostname: "{{ url }}"
+        username: "na\\"
+        password: "{{ vcenterpassword }}"
+        cluster_name: "{{ clustername }}"
+        validate_certs: no
+    delegate_to: localhost
+    register: hostfacts
+    
+  - name: Create a hostList
+    set_fact:
+      HostList: "{{ HostList | default([]) | unique + [ hostfacts['hosts_info'].keys() | list | first ]}}"
+
+  - name: Enumerate VMs
+    community.vmware.vmware_vm_info: 
+        hostname: "{{ item }}"
+        username: ""
+        password: ""
+        validate_certs: no
+    register: vm_facts
+    delegate_to: localhost
+    loop: "{{ HostList }}"
+
+  - name: Create VMs & Hosts List
+    set_fact:
+      vms_hosts: "{{ vm_facts | json_query(query) }}"
+    vars:
+      query: '(virtual_machines[*].{guest: guest_name, host: esxi_hostname})'
+
+  - name: Write VMs & Hosts List to file
+    lineinfile:
+      create: true
+      state: present
+      path: "{{ output_file + item.host }}.txt"
+      line: "{{ item.guest }}:{{ item.host }}"
+    with_items:
+    - "{{ vms_hosts }}"
+
+    - name: START Maintenance Mode
+      community.vmware.vmware_maintenancemode:
+        hostname: "{{ url }}"
+        username: "na\\"
+        password: '{{ vcenterpassword }}'
+        validate_certs: no
+        esxi_hostname: "{{ item.host }}"
+        evacuate: true
+        state: present
+    with_items:
+    - "{{ vms_hosts }}"
+
+    - name: Reboot vmhost
+      community.vmware.vmware_host_powerstate:
+        hostname: "{{ url }}"
+        username: "na\\"
+        password: '{{ vcenterpassword }}'
+        validate_certs: no
+        esxi_hostname: '{{ item.host }}'
+        state: reboot-host
+      delegate_to: localhost
+      register: reboot_host
+    with_items:
+    - "{{ vms_hosts }}"
+
+    - name: STOP Maintenance Mode
+      community.vmware.vmware_maintenancemode:
+        hostname: "{{ url }}"
+        username: "na\\"
+        password: '{{ vcenterpassword }}'
+        validate_certs: no
+        esxi_hostname: "{{ item.host }}"
+        state: absent
+      delegate_to: localhost
+    with_items:
+    - "{{ vms_hosts }}"
+
+    - name: Perform a vMotion of virtual machine
+      community.vmware.vmware_vmotion:
+        vm_name: "{{ item.guest }}"
+        destination_host: "{{ item.host }}"
+    with_items:
+    - "{{ vms_hosts }}"
+      delegate_to: localhost
